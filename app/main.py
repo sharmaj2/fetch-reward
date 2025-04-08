@@ -1,0 +1,73 @@
+from fastapi import FastAPI, HTTPException, Depends, Response, status
+from typing import Dict
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+
+from app.models import Receipt, ReceiptID, Points
+from app.database import get_db_client, SQLiteClient
+
+app = FastAPI(
+    title="Receipt Processor",
+    description="A simple receipt processor",
+    version="1.0.0"
+)
+
+
+def calculate_points(receipt: Dict) -> int:
+    """
+    Calculate points for a receipt (dummy implementation)
+    This will be replaced with actual logic later
+    """
+    # Just returning a dummy value of 50 points for now
+    return 50
+
+
+def get_db():
+    """Dependency to get the database connection"""
+    return get_db_client()
+
+
+@app.post("/receipts/process", response_model=ReceiptID, status_code=status.HTTP_200_OK)
+async def process_receipt(receipt: Receipt, db: SQLiteClient = Depends(get_db_client)):
+    """
+    Process a receipt and return its ID
+    """
+    # Store the receipt in the database
+    receipt_id = db.store_receipt(receipt)
+    
+    # Return the ID
+    return {"id": receipt_id}
+
+@app.get("/receipts/{id}/points", response_model=Points)
+async def get_points(id: str, db: SQLiteClient = Depends(get_db_client)):
+    """
+    Get the points for a receipt
+    """
+    # Check if the receipt exists
+    if not db.receipt_exists(id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No receipt found for that ID."
+        )
+    
+    # Get the receipt data
+    receipt_data = db.get_receipt(id)
+    
+    # Calculate points (this will be replaced with the actual logic later)
+    points = calculate_points(receipt_data)
+    
+    # Return the points
+    return {"points": points}
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
+# For direct execution
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
