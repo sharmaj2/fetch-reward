@@ -5,22 +5,13 @@ from fastapi.responses import JSONResponse
 
 from app.models import Receipt, ReceiptID, Points
 from app.database import get_db_client, SQLiteClient
+from app.points import calculate_points
 
 app = FastAPI(
     title="Receipt Processor",
     description="A simple receipt processor",
-    version="1.0.0"
+    version="1.2.0"
 )
-
-
-def calculate_points(receipt: Dict) -> int:
-    """
-    Calculate points for a receipt (dummy implementation)
-    This will be replaced with actual logic later
-    """
-    # Just returning a dummy value of 50 points for now
-    return 50
-
 
 def get_db():
     """Dependency to get the database connection"""
@@ -52,9 +43,11 @@ async def get_points(id: str, db: SQLiteClient = Depends(get_db_client)):
     
     # Get the receipt data
     receipt_data = db.get_receipt(id)
+
+    receipt_obj = Receipt.model_validate(receipt_data) #Deserialize receipt_data
     
-    # Calculate points (this will be replaced with the actual logic later)
-    points = calculate_points(receipt_data)
+    # Calculate points
+    points = calculate_points(receipt_obj)
     
     # Return the points
     return {"points": points}
