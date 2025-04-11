@@ -55,8 +55,8 @@ async def get_points(id: str, db: SQLiteClient = Depends(get_db_client)):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request, exc):
     return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()},
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": "The receipt is invalid."},
     )
 
 # For direct execution
