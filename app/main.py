@@ -1,5 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, Response, status
-from typing import Dict
+from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
@@ -10,7 +9,7 @@ from app.points import calculate_points
 app = FastAPI(
     title="Receipt Processor",
     description="A simple receipt processor",
-    version="1.2.0"
+    version="1.3.0"
 )
 
 def get_db():

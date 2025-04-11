@@ -1,11 +1,10 @@
 import sqlite3
 from typing import Dict, Any, Optional
 import json
-from contextlib import contextmanager
 from app.models import Receipt, generate_receipt_id
 
 class SQLiteClient:
-    def __init__(self, db=":memory:"):
+    def __init__(self, db="file:memdb1?mode=memory&cache=shared"):
         """Initialize SQLite database with persistent connection"""
         self.db_name = db
         self.conn = sqlite3.connect(self.db_name, uri=True, check_same_thread=False)
@@ -51,7 +50,7 @@ class SQLiteClient:
 
 
 # Create a global SQLite client instance
-db_client = SQLiteClient(db="file:memdb1?mode=memory&cache=shared")
+db_client = SQLiteClient()
 
 def get_db_client():
     """Return the SQLite client instance"""
