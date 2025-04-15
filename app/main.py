@@ -3,7 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from app.models import Receipt, ReceiptID, Points
-from app.database import get_db_client, SQLiteClient
+from app.database import get_db_client, RedisClient
 from app.points import calculate_points
 
 app = FastAPI(
@@ -12,13 +12,9 @@ app = FastAPI(
     version="1.3.0"
 )
 
-def get_db():
-    """Dependency to get the database connection"""
-    return get_db_client()
-
 
 @app.post("/receipts/process", response_model=ReceiptID, status_code=status.HTTP_200_OK)
-async def process_receipt(receipt: Receipt, db: SQLiteClient = Depends(get_db_client)):
+async def process_receipt(receipt: Receipt, db: RedisClient = Depends(get_db_client)):
     """
     Process a receipt and return its ID
     """
@@ -29,7 +25,7 @@ async def process_receipt(receipt: Receipt, db: SQLiteClient = Depends(get_db_cl
     return {"id": receipt_id}
 
 @app.get("/receipts/{id}/points", response_model=Points)
-async def get_points(id: str, db: SQLiteClient = Depends(get_db_client)):
+async def get_points(id: str, db: RedisClient = Depends(get_db_client)):
     """
     Get the points for a receipt
     """

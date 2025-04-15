@@ -1,57 +1,41 @@
-import sqlite3
+import redis
+import os
 from typing import Dict, Any, Optional
 import json
 from app.models import Receipt, generate_receipt_id
 
-class SQLiteClient:
-    def __init__(self, db="file:memdb1?mode=memory&cache=shared"):
-        """Initialize SQLite database with persistent connection"""
-        self.db_name = db
-        self.conn = sqlite3.connect(self.db_name, uri=True, check_same_thread=False)
-        self._init_db()
 
-    def _init_db(self):
-        cursor = self.conn.cursor()
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS receipts (
-            id TEXT PRIMARY KEY,
-            data TEXT NOT NULL
-        )
-        ''')
-        self.conn.commit()
+class RedisClient:
+    def __init__(self, host="localhost", port=6379):
+        host = os.getenv("REDIS_HOST", "localhost")
+        port = int(os.getenv("REDIS_PORT", 6379))
+        self.client = redis.Redis(host=host, port=port, db=0, decode_responses=True)
 
     def store_receipt(self, receipt: Receipt) -> str:
         receipt_id = generate_receipt_id()
         receipt_json = receipt.model_dump_json()
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "INSERT INTO receipts (id, data) VALUES (?, ?)",
-            ((receipt_id, receipt_json))
-        )
-        self.conn.commit()
+        self.client.set(receipt_id, receipt_json)
         return receipt_id
 
     def get_receipt(self, receipt_id: str) -> Optional[Dict[str, Any]]:
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT data FROM receipts WHERE id = ?",
-            (receipt_id,)
-        )
-        result = cursor.fetchone()
-        return json.loads(result[0]) if result else None
+        value = self.client.get(receipt_id)
+        return json.loads(value) if value else None
 
     def receipt_exists(self, receipt_id: str) -> bool:
-        cursor = self.conn.cursor()
-        cursor.execute(
-            "SELECT 1 FROM receipts WHERE id = ?",
-            (receipt_id,)
-        )
-        return cursor.fetchone() is not None
+        return self.client.exists(receipt_id) == 1
 
 
-# Create a global SQLite client instance
-db_client = SQLiteClient()
+# Singleton Redis client
+db_client = RedisClient()
+
 
 def get_db_client():
-    """Return the SQLite client instance"""
     return db_client
+
+
+# # Create a global SQLite client instance
+# db_client = SQLiteClient()
+
+# def get_db_client():
+#     """Return the SQLite client instance"""
+#     return db_client
