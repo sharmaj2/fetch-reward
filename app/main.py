@@ -12,9 +12,9 @@ app = FastAPI(
     version="1.3.0"
 )
 
-def get_db():
-    """Dependency to get the database connection"""
-    return get_db_client()
+# def get_db():
+#     """Dependency to get the database connection"""
+#     return get_db_client()
 
 
 @app.post("/receipts/process", response_model=ReceiptID, status_code=status.HTTP_200_OK)
@@ -24,6 +24,9 @@ async def process_receipt(receipt: Receipt, db: SQLiteClient = Depends(get_db_cl
     """
     # Store the receipt in the database
     receipt_id = db.store_receipt(receipt)
+
+
+    db.store_receipt_data(receipt_id, receipt)
     
     # Return the ID
     return {"id": receipt_id}
@@ -33,15 +36,21 @@ async def get_points(id: str, db: SQLiteClient = Depends(get_db_client)):
     """
     Get the points for a receipt
     """
-    # Check if the receipt exists
-    if not db.receipt_exists(id):
+    # # Check if the receipt exists
+    # if not db.receipt_exists(id):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_404_NOT_FOUND,
+    #         detail="No receipt found for that ID."
+    #     )
+    
+    # Get the receipt data
+    receipt_data = db.get_receipt(id)
+
+    if not receipt_data:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No receipt found for that ID."
         )
-    
-    # Get the receipt data
-    receipt_data = db.get_receipt(id)
 
     receipt_obj = Receipt.model_validate(receipt_data) #Deserialize receipt_data
     
@@ -50,6 +59,13 @@ async def get_points(id: str, db: SQLiteClient = Depends(get_db_client)):
     
     # Return the points
     return {"points": points}
+
+@app.get("/receipts/{id}/data")
+def get_data(id: str, db:SQLiteClient = Depends(get_db_client)):
+
+    res = db.get_receipt_data(id)
+
+    return res
 
 
 @app.exception_handler(RequestValidationError)
