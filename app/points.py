@@ -77,11 +77,16 @@ def calculate_points(receipt: Receipt) -> int:
     # Rule 8: 10 points if time is between 14:00 and 16:00
     try:
         purchase_time = receipt.purchaseTime
-        if isinstance(purchase_time, str):
-            purchase_time = datetime.strptime(purchase_time, "%H:%M").time()
-        if 14 <= purchase_time.hour < 16:
+
+        if purchase_time.hour == 14 and purchase_time.minute==0:
+            points += 0
+        
+        elif purchase_time.hour == 14 and purchase_time.minute > 0:
             points += 10
-            # logger.info("Rule 8: %s", points)
+
+        elif purchase_time.hour > 14 and purchase_time.hour < 16:
+            points += 10
+                # logger.info("Rule 8: %s", points)
     except Exception:
         pass
 

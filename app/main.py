@@ -12,10 +12,6 @@ app = FastAPI(
     version="1.3.0"
 )
 
-def get_db():
-    """Dependency to get the database connection"""
-    return get_db_client()
-
 
 @app.post("/receipts/process", response_model=ReceiptID, status_code=status.HTTP_200_OK)
 async def process_receipt(receipt: Receipt, db: SQLiteClient = Depends(get_db_client)):
